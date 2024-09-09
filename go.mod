@@ -39,9 +39,9 @@ require (
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
+	golang.org/x/net v0.23.0
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
-	google.golang.org/grpc v1.38.0
+	google.golang.org/grpc v1.60.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.27.1
 	k8s.io/api v0.21.5
@@ -57,4 +57,4 @@ replace (
 	sigs.k8s.io/controller-tools => sigs.k8s.io/controller-tools v0.2.9
 )
 
-go 1.13
+go 1.21
