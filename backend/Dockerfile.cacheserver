@@ -26,6 +26,7 @@ RUN GO111MODULE=on go build -o /bin/cache_server backend/src/cache/*.go
 # Check licenses and comply with license terms.
 RUN set -ex
 RUN go install github.com/google/go-licenses@d483853
+
 # First, make sure there's no forbidden license.
 RUN go-licenses check ./backend/src/cache && \
     go-licenses csv ./backend/src/cache > /tmp/licenses.csv && \
