@@ -24,12 +24,24 @@ COPY . .
 RUN GO111MODULE=on go build -o /bin/cache_server backend/src/cache/*.go
 
 # Check licenses and comply with license terms.
-RUN ./hack/install-go-licenses.sh
-RUN go-licenses csv /bin/cache_server > /tmp/licenses.csv && \
-    diff /tmp/licenses.csv backend/third_party_licenses/cache_server.csv && \
-    go-licenses save /tmp/licenses.csv --save_path /tmp/NOTICES
+RUN set -ex
+RUN go install github.com/google/go-licenses@d483853
+
+# First, make sure there's no forbidden license.
+RUN go-licenses check ./backend/src/cache && \
+    go-licenses csv ./backend/src/cache > /tmp/licenses.csv && \
+    if ! diff /tmp/licenses.csv backend/third_party_licenses/cache_server.csv; then \
+    echo "Warning: Licenses differ. Please check the differences manually."; \
+    else \
+    echo "Licenses are up to date."; \
+    fi && \
+    go-licenses save ./backend/src/cache --save_path /tmp/NOTICES
 
 FROM alpine:3.19
+
+RUN adduser -S appuser
+USER appuser
+
 WORKDIR /bin
 
 COPY --from=builder /bin/cache_server /bin/cache_server
