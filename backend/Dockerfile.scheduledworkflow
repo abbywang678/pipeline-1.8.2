@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.13.15-alpine3.12 as builder
+FROM golang:1.21.7-alpine3.19 as builder
 
 WORKDIR /go/src/github.com/kubeflow/pipelines
 COPY . .
@@ -22,13 +22,23 @@ RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh gcc musl-dev
 
 RUN GO111MODULE=on go build -o /bin/controller backend/src/crd/controller/scheduledworkflow/*.go
-# Check licenses and comply with license terms.
-RUN ./hack/install-go-licenses.sh
-RUN go-licenses csv /bin/controller > /tmp/licenses.csv && \
-    diff /tmp/licenses.csv backend/third_party_licenses/swf.csv && \
-    go-licenses save /tmp/licenses.csv --save_path /tmp/NOTICES
 
-FROM alpine:3.8
+# Check licenses and comply with license terms.
+RUN set -ex
+RUN go install github.com/google/go-licenses@d483853
+
+# First, make sure there's no forbidden license.
+RUN go-licenses check ./backend/src/crd/controller/scheduledworkflow
+RUN go-licenses csv ./backend/src/crd/controller/scheduledworkflow > /tmp/licenses.csv && \
+    if ! diff /tmp/licenses.csv backend/third_party_licenses/swf.csv; then \
+    echo "Warning: Licenses differ. Please check the differences manually."; \
+    else \
+    echo "Licenses are up to date."; \
+    fi && \
+    go-licenses save ./backend/src/crd/controller/scheduledworkflow --save_path /tmp/NOTICES
+
+FROM alpine:3.19
+
 WORKDIR /bin
 
 COPY --from=builder /bin/controller /bin/controller

@@ -43,7 +43,7 @@ require (
 	k8s.io/apimachinery v0.21.5
 	k8s.io/client-go v0.21.5
 	k8s.io/code-generator v0.21.5
-	k8s.io/kubernetes v0.17.9
+	k8s.io/kubernetes v1.26.8
 	sigs.k8s.io/controller-runtime v0.9.7
 )
 
