@@ -12,42 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.21.7-alpine3.19 as builder
+# Dockerfile for building the source code of cache_server
+FROM golang:1.21.7-alpine3.19 AS builder
+
+RUN apk update && apk upgrade && \
+    apk add --no-cache bash git openssh gcc musl-dev
 
 WORKDIR /go/src/github.com/kubeflow/pipelines
 COPY . .
 
-# Needed musl-dev for github.com/mattn/go-sqlite3
-RUN apk update && apk upgrade && \
-    apk add --no-cache bash git openssh gcc musl-dev
-
-RUN GO111MODULE=on go build -o /bin/controller backend/src/crd/controller/scheduledworkflow/*.go
+RUN GO111MODULE=on go build -o /bin/cache_server backend/src/cache/*.go
 
 # Check licenses and comply with license terms.
 RUN set -ex
 RUN go install github.com/google/go-licenses@d483853
 
-# First, make sure there's no forbidden license.
-RUN go-licenses check ./backend/src/crd/controller/scheduledworkflow
-RUN go-licenses csv ./backend/src/crd/controller/scheduledworkflow > /tmp/licenses.csv && \
-    if ! diff /tmp/licenses.csv backend/third_party_licenses/swf.csv; then \
-    echo "Warning: Licenses differ. Please check the differences manually."; \
-    else \
-    echo "Licenses are up to date."; \
-    fi && \
-    go-licenses save ./backend/src/crd/controller/scheduledworkflow --save_path /tmp/NOTICES
+RUN go-licenses check ./backend/src/cache && \
+    go-licenses csv ./backend/src/cache > /tmp/licenses.csv && \
+    go-licenses save ./backend/src/cache --save_path /tmp/NOTICES
 
 FROM alpine:3.19
-
 WORKDIR /bin
 
-COPY --from=builder /bin/controller /bin/controller
+COPY --from=builder /bin/cache_server /bin/cache_server
 # Copy licenses and notices.
 COPY --from=builder /tmp/licenses.csv /third_party/licenses.csv
 COPY --from=builder /tmp/NOTICES /third_party/NOTICES
-RUN chmod +x /bin/controller
-RUN apk --no-cache add tzdata
 
-ENV NAMESPACE ""
-
-CMD /bin/controller --logtostderr=true --namespace=${NAMESPACE}
+ENTRYPOINT [ "/bin/cache_server" ]
